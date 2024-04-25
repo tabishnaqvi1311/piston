@@ -5,9 +5,9 @@ using namespace std;
 
 int main(int argc, char *argv[]){
 
-    if(argc != 3) Display::Help();
+    if(argc <= 1) Display::Help();
 
-    Process::AllArgs(argc, argv);
+    else Process::AllArgs(argc, argv);
 
     return 0;
 }
