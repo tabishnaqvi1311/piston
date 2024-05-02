@@ -1,6 +1,6 @@
 ## Work In Progress ⚠️
 
-currently just reads and writes, as i wanted to learn how to make cli tools with c++, will add compression/decompression later.
+currently just compresses, as i wanted to learn how to make cli tools with c++, will add decompression later.
 
  ```
  .S_sSSs     .S    sSSs  sdSS_SSSSSSbs    sSSs_sSSs     .S_sSSs    
@@ -27,7 +27,6 @@ Piston's Usage:
 ```
 
 ### Installation
-Still a work in progress but you can check it out by cloning and running the executable
+Still a work in progress but you can check it out by cloning and running the executable 
 
-
-`/piston -x main.txt`
+`./piston -a largeFile.txt`

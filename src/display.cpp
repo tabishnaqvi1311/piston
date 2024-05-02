@@ -1,5 +1,5 @@
 #include <iostream>
-#include "display.h"
+#include "../include/display.h"
 using namespace std;
 
 #define ANSI_COLOR_CYAN "\x1b[36m"
