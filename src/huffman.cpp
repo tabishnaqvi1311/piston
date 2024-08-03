@@ -2,28 +2,30 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <fstream>
 using namespace std;
 
 #define ANSI_COLOR_RED "\x1b[31m"
 #define ANSI_COLOR_RESET "\x1b[0m"
 
-
 string Huffman::HuffmanValue[256] = {""};
 
 unsigned long long Huffman::Utility::getFileSize(const char* filename){
     FILE* fptr = fopen(filename, "rb");
+    
     fseek(fptr, 0, SEEK_END);
-    unsigned long long filesize = ftell(fptr);
+    unsigned long long filesize = ftello(fptr);
+    fclose(fptr);
     return filesize;
 }
 
-map<char, unsigned long long> Huffman::Compress::parseFile(const char* filename, unsigned long long fileSize){
+map<char, unsigned long long> Huffman::Compress::parseFile(const char* filename, const unsigned long long fileSize){
     FILE* fptr = fopen(filename, "rb");
     if(fptr == NULL){
         cout << ANSI_COLOR_RED << "File Not Found!" << ANSI_COLOR_RESET << endl;
         exit(-1);
     }
-
+    
     vector<unsigned long long> charCount(256, 0);
     unsigned char ch;
     unsigned long long i = 0, f_size = fileSize;
@@ -76,10 +78,10 @@ Huffman::Node* Huffman::Compress::generateHuffmanTree(const map<char, unsigned l
         store.push_back(parent);
 
         vector<Node*>::iterator iter1 = store.end()-2;
-        while((*iter1)->count < parent->count && iter1 != store.begin()){
+        while((*iter1)->count < parent->count && iter1 != begin(store)){
             --iter1;
         }
-        sort(store.begin(), store.end(), sortbyCount);
+        sort(iter1, store.end(), sortbyCount);
     }
     one = *(store.end()-1);
     two = *(store.end()-2);
@@ -133,6 +135,7 @@ void Huffman::Compress::compressFile(const char* filename, const unsigned long l
 
     FILE* inptr = fopen(filename, "rb");
     FILE* outptr = fopen((string(filename)+".tabs").c_str(), "wb");
+    bool writeRemaining = true;
 
     while(header_i < headerLen){
         fputc(header[header_i++], outptr);
@@ -141,15 +144,17 @@ void Huffman::Compress::compressFile(const char* filename, const unsigned long l
     unsigned char ch, fch = 0;
     char counter = 7;
     unsigned long long size = 0, i;
-
+    
     while(size != fileSize){
         ch = fgetc(inptr);
         i = 0;
         const string &huffmanStr = HuffmanValue[ch];
         while(huffmanStr[i] != '\0'){
+            writeRemaining = true;
             fch = fch | ((huffmanStr[i] - '0') << counter);
             counter = (counter + 7) & 7;
             if(counter == 7){
+                writeRemaining = false;
                 fputc(fch, outptr);
                 fch ^= fch;
             }
@@ -162,9 +167,90 @@ void Huffman::Compress::compressFile(const char* filename, const unsigned long l
         }
     }
 
-    if(fch) fputc(fch, outptr);
+    if(writeRemaining) fputc(fch, outptr);
 
     cout << endl;
     fclose(inptr);
     fclose(outptr);
+}
+
+void Huffman::Decompress::generateHuffmanTree(Node* const root, const string &codes,  const unsigned char ch){
+    Node* traverse = root;
+    int i = 0;
+    while(codes[i] != '\0'){
+        if(codes[i] == '0'){
+            if(!traverse->left) traverse->left = new Node(0);
+            traverse = traverse->left;
+        } else {
+            if(!traverse->right) traverse->right = new Node(0);
+            traverse = traverse->right;
+        }
+        ++i;
+    }
+    traverse->character = ch;
+}
+
+pair<Huffman::Node*, pair<unsigned char, int> >Huffman::Decompress::decodeHeader(FILE* inptr){
+    Node* root = new Node(0);
+    int charCount, buffer, totalLength = 1;
+    char ch, len;
+    charCount = fgetc(inptr);
+    string codes;
+
+    ++charCount;
+    
+    while(charCount){
+        ch = fgetc(inptr);
+        codes = "";
+        len = fgetc(inptr);
+        buffer = len;
+
+        while(buffer > codes.size()) codes.push_back(fgetc(inptr));
+        totalLength += codes.size()+2;
+        generateHuffmanTree(root, codes, ch);
+        --charCount;
+    }
+    unsigned char padding = fgetc(inptr);
+    ++totalLength;
+    return make_pair(root, make_pair(padding, totalLength));
+}
+
+void Huffman::Decompress::decompress(const char* filename, const unsigned long long filesize, const unsigned long long leftover){
+    const string fl = filename;
+    FILE* iptr = fopen(fl.c_str(), "rb");
+    FILE* optr = fopen(string("output"+fl.substr(0, fl.size() - 5)).c_str(), "wb");
+    if(iptr == NULL){
+        perror("file not found");
+        exit(-1);
+    }
+
+    pair<Huffman::Node*, pair<unsigned char, int> > headerMetadata = Huffman::Decompress::decodeHeader(iptr);
+    Huffman::Node* const root = headerMetadata.first;
+    const auto [padding, headersize] = headerMetadata.second;
+    char ch, counter = 7;
+    unsigned long long size = 0;
+    const unsigned long long fsize = filesize - headersize;
+
+    Huffman::Node* traverse = root;
+    ch = fgetc(iptr);
+    while(size != fsize){
+        while(counter >= 0){
+            traverse = ch & (1 << counter) ? traverse->right : traverse->left;
+            ch^=(1 << counter);
+            --counter;
+            if(!traverse->left && !traverse->right){
+                fputc(traverse->character, optr);
+                if(size == fsize - 1 && padding == counter+1) break;
+                traverse = root;   
+            }
+        }
+        ++size;
+        counter = 7;
+        if((size*100/fsize) > ((size-1)*100/fsize)){
+            printf("\r%lld%% completed, output filesize = %lld bytes", (size * 100/fsize), size);
+        }
+        ch = fgetc(iptr);
+    }
+    fclose(iptr);
+    fclose(optr);
 }

@@ -30,6 +30,17 @@ int main(int argc, char *argv[]){
 
         cout << "compression complete";
     }
+    else if(string(option) == "-x" || string(option) == "-unarchive"){
+        fileSize = Huffman::Utility::getFileSize(filename);
+        Huffman::Decompress::decompress(filename, fileSize, predictedFileSize);   
+    }
+    else if(string(option) == "-h" || string(option) == "-help"){
+        Display::Help();
+        exit(-1);
+    }
+    else {
+        cout << "Bad option :(" <<  endl << "Check usage with -h flag";
+    }
 
     return 0;
 }

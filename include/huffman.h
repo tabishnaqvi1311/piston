@@ -8,11 +8,11 @@ namespace Huffman {
 
     struct Node {
         char character;
-        long long count;
+        unsigned long long count;
         Node* left;
         Node* right;
 
-        Node(long long count){
+        Node(unsigned long long count){
             this->character = 0;
             this->count = count;
             this->left = this->right = nullptr;
@@ -32,12 +32,18 @@ namespace Huffman {
     }
 
     namespace Compress{
-        map<char, unsigned long long> parseFile(const char* filename, unsigned long long fileSize);
+        map<char, unsigned long long> parseFile(const char* filename, const unsigned long long fileSize);
         Node* combineNodes(Node* a, Node* b);
         vector<Node*> sortByCharCount(const map<char, unsigned long long>& charCountMap);
         Node* generateHuffmanTree(const map<char, unsigned long long>& charCountMap);
         unsigned long long storeHuffmanValue(const Node* root, string& buffer);
         string generateHeader(const char padding);
         void compressFile(const char* filename, const unsigned long long fileSize, const unsigned long long predictedFileSize);
+    }
+
+    namespace Decompress {
+        void generateHuffmanTree(Node* const root, const string &codes, const unsigned char ch);
+        pair<Node*, pair<unsigned char, int> > decodeHeader(FILE *inptr);
+        void decompress(const char* filename, const unsigned long long filesize, const unsigned long long leftover);
     }
 }
