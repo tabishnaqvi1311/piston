@@ -1,7 +1,3 @@
-## Work In Progress ⚠️
-
-currently just compresses, as i wanted to learn how to make cli tools with c++, will add decompression later.
-
  ```
  .S_sSSs     .S    sSSs  sdSS_SSSSSSbs    sSSs_sSSs     .S_sSSs    
  .SS~YS%%b   .SS   d%%SP  YSSS~S%SSSSSP   d%%SP~YS%%b   .SS~YS%%b   
@@ -27,6 +23,6 @@ Piston's Usage:
 ```
 
 ### Installation
-Still a work in progress but you can check it out by cloning and running the executable 
+clone and run the executable 
 
 `./piston -a largeFile.txt`
